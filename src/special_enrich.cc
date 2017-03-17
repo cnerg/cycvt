@@ -481,18 +481,26 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
   // Re-Add the special nuc inside the product, and fix tails amount accordingly
 
   double prod_mass = response->quantity();
-  double u5_raw_enrich = UraniumAssay(response);
+
+  cyclus::toolkit::MatQuery mq_resp(response);
+  double u5_raw_enrich = mq_resp.mass_frac(922350000);
+  cyclus::toolkit::MatQuery mq_flip(flip_mat.first);
+  double u5_flip_enrich = mq_flip.mass_frac(922350000);
 
   
   std::map<cyclus::Nuc, double>::iterator it;
   for (it = ux.begin(); it != ux.end(); it++) {
+    
     double nuc_i_enrich_factor =
-        u5_raw_enrich / UraniumAssay(flip_mat.first) * it->second;
+        u5_raw_enrich / u5_flip_enrich * it->second;
+  std::cout << "u5_prod " <<  u5_raw_enrich << " u5_feed " <<  u5_flip_enrich << " input_factor " << it->second << std::endl;;
 
     cyclus::toolkit::MatQuery mq_(natu_matl);
     double nuc_i_feed_enrich = mq_.mass(it->first) / natu_matl->quantity();
     double nuc_i_prod_enrich = nuc_i_feed_enrich * nuc_i_enrich_factor;
-
+    std::cout << "prod " << nuc_i_prod_enrich <<" feed : "<<  nuc_i_feed_enrich << " factor " << nuc_i_enrich_factor << std::endl;
+  
+    std::cout << " product u6 enrichement: " << nuc_i_prod_enrich << std::endl;
     double nuc_i_prod_mass = nuc_i_prod_enrich * prod_mass;
 
     // Remove come ux from the material pushed in the tails and add in into the
