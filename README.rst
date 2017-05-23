@@ -1,130 +1,48 @@
-.. _hello_world:
+=====
+cycvt
+=====
 
-Hello, Cyclus!
-==============
-This pages walks you through a very simple hello world example using
-|cyclus| agents.  First make sure that you have the dependencies installed,
-namely |Cyclus|, CMake, and a recent version of Python (2.7 or 3.3+).
 
-First, you need to get the ``cycstub`` code.  Cycstub is a skeleton code base
-that you can use to quick-start new |cyclus| module development projects.
-You can grab cycstub either by using git to
-`clone the repository <https://github.com/cyclus/cycstub.git>`_ or by
-`downloading the zip file <https://github.com/cyclus/cycstub/archive/develop.zip>`_.
-Let's put this code in a ``tutorial`` directory and go into it.
 
-**Getting cycstub via git:**
+This set of archetypes have been develop to support CVT collaborators works.
 
-.. code-block:: bash
+This contains the following archetypes:
 
-    $ git clone https://github.com/cyclus/cycstub.git tutorial
-    $ cd tutorial
+- special_enrich: the enrichment facility has been developed based on the
+  [cycamore](https://github.com/cyclus/cycamore) enrichment archetype, but
+  allowing the tracking of isotopes other than u235 and u238.
 
-**Getting cycstub via zip:**
 
-.. code-block:: bash
 
-    $ curl -L https://api.github.com/repos/cyclus/cycstub/zipball > tutorial.zip
-    $ unzip tutorial.zip
-    $ mv cyclus-cycstub-* tutorial
-    $ cd tutorial
 
-------------
+special_enricht
+===============
 
-Since cycstub is a template project everything is named ``stub``. We need to
-change this to reflect the name we want our new project to be called -
-``tutorial`` here.  Cycstub comes with a renaming tool to do just this! From
-the command line, run Python in the following way:
+The special enrich archetypes is based on the cycamore::enrichement archetype
+([see](https://github.com/cyclus/cycamore). Where the cycamore::enrichement only
+allows u235 and u238 to go into the product and send all the other nuclides
+present in the feed into the waste, the special_enrich archetype allows user to
+keep them (or a fraction of them) in the product.
+To do so, one can specify for any nuclide (other than u235 and u238) the
+relative enrichement ratio (relative to u235 enrichment ratio) to allows the
+special enrichment archetypes to determine the amount of this special nuclide to
+add to the product.
+Example of configuration for the special enrich:
+`
+<enrich_efficiencies>
+    <item>
+        <comp>U236</comp>
+        <eff>0.2</eff>
+    </item>
+</enrich_efficiencies>
+`
+In this case, the ratio of the enrichment (feed over product) for the u236 will
+be 0.2 time the ratio of the enrichment (feed over product) of the u235.
+The enrichment are considered for each nuclide as mass of nuclide over the
+total mass.
 
-.. code-block:: bash
+Note: the author are aware of the accuracy limit of this mobilisation of a
+multi-isotope enrichment, and this implementation do not aims to have any
+realistic representation. 
 
-    tutorial $ python rename.py tutorial
 
-------------
-
-Let's now change the behavior of the TutorialFacility's ``Tick()`` &
-``Tock()`` member functions to print "Hello" and "World" respectively.  To do
-this, please open up the :file:`src/tutorial_facility.cc` file in your
-favorite text editor (vim, emacs, gedit, `notepad++ <http://exofrills.org>`_).
-Change the original functions to look like:
-
-**Original Tick() and Tock() in src/tutorial_facility.cc:**
-
-.. code-block:: c++
-
-    void TutorialFacility::Tick() {}
-
-    void TutorialFacility::Tock() {}
-
-**New Tick() and Tock() in src/tutorial_facility.cc:**
-
-.. code-block:: c++
-
-    void TutorialFacility::Tick() {std::cout << "Hello, ";}
-
-    void TutorialFacility::Tock() {std::cout << "World!\n";}
-
-------------
-
-Now that we have altered the behavior of the TutorialFacility, let's compile and
-install the ``tutorial`` project.  This done with the install.py script.
-The install script puts the project into your cyclus userspace,
-``${HOME}/.local/lib/cyclus``.
-
-.. code-block:: bash
-
-    tutorial $ python install.py
-
-------------
-
-Let's run |cyclus| with the TutorialFacility! In the directory there is
-an :file:`example.xml`. Running |cyclus| on this file with the command
-``cyclus example.xml`` should produce the following output.
-
-.. code-block:: bash
-
-    tutorial $ cyclus example.xml
-                  :
-              .CL:CC CC             _Q     _Q  _Q_Q    _Q    _Q              _Q
-            CC;CCCCCCCC:C;         /_\)   /_\)/_/\\)  /_\)  /_\)            /_\)
-            CCCCCCCCCCCCCl       __O|/O___O|/O_OO|/O__O|/O__O|/O____________O|/O__
-         CCCCCCf     iCCCLCC     /////////////////////////////////////////////////
-         iCCCt  ;;;;;.  CCCC
-        CCCC  ;;;;;;;;;. CClL.                          c
-       CCCC ,;;       ;;: CCCC  ;                   : CCCCi
-        CCC ;;         ;;  CC   ;;:                CCC`   `C;
-      lCCC ;;              CCCC  ;;;:             :CC .;;. C;   ;    :   ;  :;;
-      CCCC ;.              CCCC    ;;;,           CC ;    ; Ci  ;    :   ;  :  ;
-       iCC :;               CC       ;;;,        ;C ;       CC  ;    :   ; .
-      CCCi ;;               CCC        ;;;.      .C ;       tf  ;    :   ;  ;.
-      CCC  ;;               CCC          ;;;;;;; fC :       lC  ;    :   ;    ;:
-       iCf ;;               CC         :;;:      tC ;       CC  ;    :   ;     ;
-      fCCC :;              LCCf      ;;;:         LC :.  ,: C   ;    ;   ; ;   ;
-      CCCC  ;;             CCCC    ;;;:           CCi `;;` CC.  ;;;; :;.;.  ; ,;
-        CCl ;;             CC    ;;;;              CCC    CCL
-       tCCC  ;;        ;; CCCL  ;;;                  tCCCCC.
-        CCCC  ;;     :;; CCCCf  ;                     ,L
-         lCCC   ;;;;;;  CCCL
-         CCCCCC  :;;  fCCCCC
-          . CCCC     CCCC .
-           .CCCCCCCCCCCCCi
-              iCCCCCLCf
-               .  C. ,
-                  :
-    Hello, World!
-    Hello, World!
-    Hello, World!
-    Hello, World!
-    Hello, World!
-    Hello, World!
-    Hello, World!
-    Hello, World!
-    Hello, World!
-    Hello, World!
-
-    Status: Cyclus run successful!
-    Output location: cyclus.sqlite
-    Simulation ID: 0ae730e0-a9a8-4576-afaa-d1db6399d5a2
-
-If you look in the input file you'll see that the simulation duration was set
-to 10.  This is why "Hello, World!" is printed ten times.
