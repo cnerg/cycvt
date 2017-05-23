@@ -1,5 +1,5 @@
-#ifndef CYCAMORE_SRC_ENRICHMENT_TESTS_
-#define CYCAMORE_SRC_ENRICHMENT_TESTS_
+#ifndef CYCVT_SRC_ENRICHMENT_TESTS_
+#define CYCVT_SRC_ENRICHMENT_TESTS_
 
 #include <gtest/gtest.h>
 
@@ -10,15 +10,15 @@
 #include "exchange_context.h"
 #include "material.h"
 
-#include "enrichment.h"
+#include "special_enrich.h"
 
-namespace cycamore {
+namespace cycvt {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-class EnrichmentTest : public ::testing::Test {
+class SEnrichmentTest : public ::testing::Test {
  protected:
   cyclus::TestContext tc_;
-  Enrichment* src_facility;
+  SEnrichment* src_facility;
   std::string feed_commod, product_commod, feed_recipe, tails_commod;
   cyclus::Composition::Ptr recipe;
   TestFacility* trader;
@@ -47,6 +47,6 @@ class EnrichmentTest : public ::testing::Test {
       GetContext(int nreqs, int nvalid);
 };
 
-}  // namespace cycamore
+}  // namespace cycvt
 
-#endif  // CYCAMORE_SRC_ENRICHMENT_FACILITY_TESTS_
+#endif  // CYCVT_SRC_ENRICHMENT_FACILITY_TESTS_
