@@ -28,14 +28,14 @@ relative enrichement ratio (relative to u235 enrichment ratio) to allows the
 special enrichment archetypes to determine the amount of this special nuclide to
 add to the product.
 Example of configuration for the special enrich:
-`
+```
 <enrich_efficiencies>
     <item>
         <comp>U236</comp>
         <eff>0.2</eff>
     </item>
 </enrich_efficiencies>
-`
+```
 In this case, the ratio of the enrichment (feed over product) for the u236 will
 be 0.2 time the ratio of the enrichment (feed over product) of the u235.
 The enrichment are considered for each nuclide as mass of nuclide over the
