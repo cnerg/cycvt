@@ -8,9 +8,9 @@ This set of archetypes have been develop to support CVT collaborators works.
 
 This contains the following archetypes:
 
-- special_enrich: the enrichment facility has been developed based on the
-  [cycamore](https://github.com/cyclus/cycamore) enrichment archetype, but
-  allowing the tracking of isotopes other than u235 and u238.
+    - special_enrich: the enrichment facility has been developed based on the
+      [cycamore](https://github.com/cyclus/cycamore) enrichment archetype, but
+      allowing the tracking of isotopes other than u235 and u238.
 
 
 
@@ -19,9 +19,9 @@ special_enricht
 ===============
 
 The special enrich archetypes is based on the cycamore::enrichement archetype
-([see](https://github.com/cyclus/cycamore). Where the cycamore::enrichement only
+([see](https://github.com/cyclus/cycamore)). The Cycamore enrichement only
 allows u235 and u238 to go into the product and send all the other nuclides
-present in the feed into the waste, the special_enrich archetype allows user to
+present in the feed into the waste. The special_enrich archetype allows user to
 keep them (or a fraction of them) in the product.
 To do so, one can specify for any nuclide (other than u235 and u238) the
 relative enrichement ratio (relative to u235 enrichment ratio) to allows the
