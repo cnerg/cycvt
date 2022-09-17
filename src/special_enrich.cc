@@ -14,42 +14,44 @@ namespace cycvt {
 std::pair<cyclus::Material::Ptr, cyclus::Material::Ptr> equivalent_u8(
     cyclus::Material::Ptr mat, std::map<cyclus::Nuc, double> ux) {
   double initial_q = mat->quantity();
-  cyclus::Material::Ptr equiv_mat =
-      cyclus::Material::CreateUntracked(mat->quantity(), mat->comp());
-  cyclus::Material::Ptr mat_special_nucs;
+  std::map<cyclus::Nuc, double> initial_mass_compo = mat->comp()->mass();
 
-  cyclus::CompMap to_substract;
-  double q_to_switch = 0;
+  std::map<cyclus::Nuc, double> eq_mass_compo;
+  std::map<cyclus::Nuc, double> extract_mass_compo;
+
+  double mass_out = 0;
+
+  // Initialise U238 in Eq mat
+  eq_mass_compo.insert(std::pair<cyclus::Nuc, double>(922380000, 0));
 
   std::map<cyclus::Nuc, double>::iterator it;
+  for (it = initial_mass_compo.begin(); it != initial_mass_compo.end(); it++) {
+    cyclus::Nuc nuc = it->first;
+    double qty = it->second;
 
-  for (it = ux.begin(); it != ux.end(); it++) {
-    cyclus::toolkit::MatQuery mq(mat);
-    double nuc_i_mass = mq.mass(it->first);
-    q_to_switch += nuc_i_mass;
-    to_substract[it->first] = nuc_i_mass;
-  }
-  if (to_substract.size() != 0) {
-    cyclus::Composition::Ptr c_special_nucs =
-        cyclus::Composition::CreateFromMass(to_substract);
-    mat_special_nucs =
-        cyclus::Material::CreateUntracked(q_to_switch, c_special_nucs);
-    equiv_mat->ExtractComp(q_to_switch, c_special_nucs);
-
-    cyclus::CompMap to_add;
-    to_add[922380000] = q_to_switch;
-    cyclus::Composition::Ptr c_to_add =
-        cyclus::Composition::CreateFromMass(to_add);
-    equiv_mat->Absorb(cyclus::Material::CreateUntracked(q_to_switch, c_to_add));
-  } else {
-    return std::pair<cyclus::Material::Ptr, cyclus::Material::Ptr>(
-        equiv_mat, mat_special_nucs);
+    std::map<cyclus::Nuc, double>::iterator it2 = ux.find(nuc);
+    if (it2 != ux.end()) {
+      extract_mass_compo.insert(std::pair<cyclus::Nuc, double>(nuc, qty));
+      eq_mass_compo[922380000] += qty;
+      mass_out += qty;
+    } else {
+      if (nuc == 922380000)
+        eq_mass_compo[922380000] += qty;
+      else
+        eq_mass_compo.insert(std::pair<cyclus::Nuc, double>(nuc, qty));
+    }
   }
 
-  if (equiv_mat->quantity() != mat->quantity()) {
-    std::cout << "Oupsy !!" << std::endl;
-  }
-  
+  cyclus::Composition::Ptr equival_compo =
+      cyclus::Composition::CreateFromMass(eq_mass_compo);
+  cyclus::Material::Ptr equiv_mat =
+      cyclus::Material::CreateUntracked(mat->quantity(), equival_compo);
+
+  cyclus::Composition::Ptr extract_compo =
+      cyclus::Composition::CreateFromMass(extract_mass_compo);
+  cyclus::Material::Ptr mat_special_nucs =
+      cyclus::Material::CreateUntracked(mat->quantity(), extract_compo);
+
   // return a pair containing the equivalent material replacing all special
   // nucs but U-238, and the replaced material containing the special nucs.
   return std::pair<cyclus::Material::Ptr, cyclus::Material::Ptr>(
@@ -438,7 +440,7 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
 
   std::pair<Material::Ptr, Material::Ptr> flip_mat =
       equivalent_u8(natu_matl, ux);
-  
+
   cyclus::Material::Ptr equiv_natu_mat = flip_mat.first;
 
   cyclus::toolkit::MatQuery mq(equiv_natu_mat);
@@ -487,10 +489,8 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
   cyclus::toolkit::MatQuery mq_flip(flip_mat.first);
   double u5_flip_enrich = mq_flip.mass_frac(922350000);
 
-  
   std::map<cyclus::Nuc, double>::iterator it;
   for (it = ux.begin(); it != ux.end(); it++) {
-    
     double nuc_i_enrich_factor =
         u5_raw_enrich / u5_flip_enrich * it->second;
 
