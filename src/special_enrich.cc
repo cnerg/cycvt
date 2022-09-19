@@ -472,6 +472,11 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
   // "enrich" it, but pull out the composition and quantity we require from the
   // blob
   cyclus::Composition::Ptr comp = mat->comp();
+  std::map<cyclus::Nuc, double> compo = comp->atom();
+  std::map<cyclus::Nuc, double>::iterator it2;
+  for (it2 = compo.begin(); it2 != compo.end(); it2++) {
+    std::cout << it2->first << " " << it2->second << std::endl;
+  }
   Material::Ptr response = r->ExtractComp(qty, comp);
 
   current_swu_capacity -= swu_req;
@@ -480,7 +485,8 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
   intra_timestep_feed_ += feed_req;
   RecordSEnrichment_(feed_req, swu_req);
 
-  // Re-Add the special nuc inside the product, and fix tails amount accordingly
+  // Re-Add the special nuc inside the product, and fix tails amount
+  // accordingly
 
   double prod_mass = response->quantity();
 
@@ -491,16 +497,15 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
 
   std::map<cyclus::Nuc, double>::iterator it;
   for (it = ux.begin(); it != ux.end(); it++) {
-    double nuc_i_enrich_factor =
-        u5_raw_enrich / u5_flip_enrich * it->second;
+    double nuc_i_enrich_factor = u5_raw_enrich / u5_flip_enrich * it->second;
 
     cyclus::toolkit::MatQuery mq_(natu_matl);
     double nuc_i_feed_enrich = mq_.mass(it->first) / natu_matl->quantity();
     double nuc_i_prod_enrich = nuc_i_feed_enrich * nuc_i_enrich_factor;
     double nuc_i_prod_mass = nuc_i_prod_enrich * prod_mass;
 
-    // Remove come ux from the material pushed in the tails and add in into the
-    // response, do the otherwise for the U-238 to conserve mass balance.
+    // Remove come ux from the material pushed in the tails and add in into
+    // the response, do the otherwise for the U-238 to conserve mass balance.
     cyclus::CompMap nuc_to_add;
     nuc_to_add[it->first] = nuc_i_prod_mass;
     response->Absorb(cyclus::Material::CreateUntracked(
@@ -518,21 +523,21 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
 
   tails.Push(r);
 
-  LOG(cyclus::LEV_INFO5, "EnrFac") << prototype()
-                                   << " has performed an enrichment: ";
+  LOG(cyclus::LEV_INFO5, "EnrFac")
+      << prototype() << " has performed an enrichment: ";
   LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Feed Qty: " << feed_req;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Feed Assay: "
-                                   << assays.Feed() * 100;
+  LOG(cyclus::LEV_INFO5, "EnrFac")
+      << "   * Feed Assay: " << assays.Feed() * 100;
   LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Product Qty: " << qty;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Product Assay: "
-                                   << assays.Product() * 100;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Tails Qty: "
-                                   << TailsQty(qty, assays);
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Tails Assay: "
-                                   << assays.Tails() * 100;
+  LOG(cyclus::LEV_INFO5, "EnrFac")
+      << "   * Product Assay: " << assays.Product() * 100;
+  LOG(cyclus::LEV_INFO5, "EnrFac")
+      << "   * Tails Qty: " << TailsQty(qty, assays);
+  LOG(cyclus::LEV_INFO5, "EnrFac")
+      << "   * Tails Assay: " << assays.Tails() * 100;
   LOG(cyclus::LEV_INFO5, "EnrFac") << "   * SWU: " << swu_req;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Current SWU capacity: "
-                                   << current_swu_capacity;
+  LOG(cyclus::LEV_INFO5, "EnrFac")
+      << "   * Current SWU capacity: " << current_swu_capacity;
 
   return response;
 }
