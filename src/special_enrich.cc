@@ -490,6 +490,10 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
   double u5_enrich_factor = prod_assay / feed_assay;
 
   std::map<cyclus::Nuc, double> feed_compo = r->comp()->mass();
+  std::map<cyclus::Nuc, double>::iterator it;
+  for (it = compo.begin(); it != compo.end(); it++) {
+    compo[it->first] = it->second / mat->quantity();
+  }
 
   std::map<cyclus::Nuc, double>::iterator it;
   for (it = ux.begin(); it != ux.end(); it++) {
@@ -505,38 +509,38 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
     }
   }
 
-  cyclus::Composition::Ptr corrected_comp =
-      cyclus::Composition::CreateFromMass(compo);
+    cyclus::Composition::Ptr corrected_comp =
+        cyclus::Composition::CreateFromMass(compo);
 
-  Material::Ptr response = r->ExtractComp(qty, corrected_comp);
-  tails.Push(r);
+    Material::Ptr response = r->ExtractComp(qty, corrected_comp);
+    tails.Push(r);
 
-  current_swu_capacity -= swu_req;
+    current_swu_capacity -= swu_req;
 
-  intra_timestep_swu_ += swu_req;
-  intra_timestep_feed_ += feed_req;
-  RecordSEnrichment_(feed_req, swu_req);
+    intra_timestep_swu_ += swu_req;
+    intra_timestep_feed_ += feed_req;
+    RecordSEnrichment_(feed_req, swu_req);
 
-  // Re-Add the special nuc inside the product, and fix tails amount
-  // accordingly
+    // Re-Add the special nuc inside the product, and fix tails amount
+    // accordingly
 
-  LOG(cyclus::LEV_INFO5, "EnrFac")
-      << prototype() << " has performed an enrichment: ";
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Feed Qty: " << feed_req;
-  LOG(cyclus::LEV_INFO5, "EnrFac")
-      << "   * Feed Assay: " << assays.Feed() * 100;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Product Qty: " << qty;
-  LOG(cyclus::LEV_INFO5, "EnrFac")
-      << "   * Product Assay: " << assays.Product() * 100;
-  LOG(cyclus::LEV_INFO5, "EnrFac")
-      << "   * Tails Qty: " << TailsQty(qty, assays);
-  LOG(cyclus::LEV_INFO5, "EnrFac")
-      << "   * Tails Assay: " << assays.Tails() * 100;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * SWU: " << swu_req;
-  LOG(cyclus::LEV_INFO5, "EnrFac")
-      << "   * Current SWU capacity: " << current_swu_capacity;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << prototype() << " has performed an enrichment: ";
+    LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Feed Qty: " << feed_req;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Feed Assay: " << assays.Feed() * 100;
+    LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Product Qty: " << qty;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Product Assay: " << assays.Product() * 100;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Tails Qty: " << TailsQty(qty, assays);
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Tails Assay: " << assays.Tails() * 100;
+    LOG(cyclus::LEV_INFO5, "EnrFac") << "   * SWU: " << swu_req;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Current SWU capacity: " << current_swu_capacity;
 
-  return response;
+    return response;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
