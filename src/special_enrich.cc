@@ -497,9 +497,9 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
     double factor = it->second;
     std::map<cyclus::Nuc, double>::iterator it2 = feed_compo.find(nuc);
     if (it2 != feed_compo.end()) {
-      compo.insert(
-          std::pair<cyclus::Nuc, double>(nuc, factor * u5_enrich_factor));
-      compo[922380000] -= factor * u5_enrich_factor;
+      compo.insert(std::pair<cyclus::Nuc, double>(
+          nuc, it2->second * factor * u5_enrich_factor));
+      compo[922380000] -= it2->second * factor * u5_enrich_factor;
     }
   }
 
