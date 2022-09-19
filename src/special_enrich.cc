@@ -507,6 +507,7 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
       cyclus::Composition::CreateFromMass(compo);
 
   Material::Ptr response = r->ExtractComp(qty, corrected_comp);
+  tails.Push(r);
 
   current_swu_capacity -= swu_req;
 
@@ -516,9 +517,6 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
 
   // Re-Add the special nuc inside the product, and fix tails amount
   // accordingly
-
-  Material::Ptr response = r->ExtractComp(qty, comp);
-  tails.Push(r);
 
   LOG(cyclus::LEV_INFO5, "EnrFac")
       << prototype() << " has performed an enrichment: ";
