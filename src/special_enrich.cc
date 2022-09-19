@@ -500,6 +500,7 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
       compo.insert(std::pair<cyclus::Nuc, double>(
           nuc, it2->second * factor * u5_enrich_factor));
       compo[922380000] -= it2->second * factor * u5_enrich_factor;
+      std::cout << compo[922380000] << std::endl;
     }
   }
 
