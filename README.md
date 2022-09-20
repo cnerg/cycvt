@@ -49,7 +49,7 @@ realistic representation.
 Math behind SEnricht
 --------------------
 
-with a Feed F, a target Product (P) enrichement (Pe) and few special nuclide A,B with respective enrichment effectiveness Ea and Eb (effectiveness relative to U235 enrichement).
+with a Feed `F`, a target Product `P`, enrichement `Pe` and few special nuclide A,B with respective enrichment effectiveness Ea and Eb (effectiveness relative to U235 enrichement).
 
 We also considere the "Enrich" function that enrich a pure U235/U238 feed into enricht uranium (LEU or HEU).
 
@@ -63,7 +63,7 @@ We also considere the "Enrich" function that enrich a pure U235/U238 feed into e
 
 3. Re-add the nucs A and B in the product:
 
-`P = Peq + Fa/|F| * Ea E_U235 * A + Fa/|F| * Eb E_U235 * B - Fa/|F| * Ea E_U235 * U238 + Fa/|F| * Eb E_U235 * U238` where `E_U235 = Peq_U235 / ||Peq|| / Feq_U235 / ||Feq||` (the ratio of U235 assay between `Peq` and `Feq`)
+`P = Peq + Fa/|F| * Ea E_U235 * A + Fa/|F| * Eb E_U235 * B - Fa/|F| * Ea E_U235 * U238 + Fa/|F| * Eb E_U235 * U238` where `E_U235 = ( Peq_U235 / ||Peq|| ) / (Feq_U235 / ||Feq||)` (the ratio of U235 assay between `Peq` and `Feq`)
 
  4. Compute the Tails assuming the mass required of feed is the same as the equivalent feed:
 
