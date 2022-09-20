@@ -14,42 +14,44 @@ namespace cycvt {
 std::pair<cyclus::Material::Ptr, cyclus::Material::Ptr> equivalent_u8(
     cyclus::Material::Ptr mat, std::map<cyclus::Nuc, double> ux) {
   double initial_q = mat->quantity();
-  cyclus::Material::Ptr equiv_mat =
-      cyclus::Material::CreateUntracked(mat->quantity(), mat->comp());
-  cyclus::Material::Ptr mat_special_nucs;
+  std::map<cyclus::Nuc, double> initial_mass_compo = mat->comp()->mass();
 
-  cyclus::CompMap to_substract;
-  double q_to_switch = 0;
+  std::map<cyclus::Nuc, double> eq_mass_compo;
+  std::map<cyclus::Nuc, double> extract_mass_compo;
+
+  double mass_out = 0;
+
+  // Initialise U238 in Eq mat
+  eq_mass_compo.insert(std::pair<cyclus::Nuc, double>(922380000, 0));
 
   std::map<cyclus::Nuc, double>::iterator it;
+  for (it = initial_mass_compo.begin(); it != initial_mass_compo.end(); it++) {
+    cyclus::Nuc nuc = it->first;
+    double qty = it->second;
 
-  for (it = ux.begin(); it != ux.end(); it++) {
-    cyclus::toolkit::MatQuery mq(mat);
-    double nuc_i_mass = mq.mass(it->first);
-    q_to_switch += nuc_i_mass;
-    to_substract[it->first] = nuc_i_mass;
-  }
-  if (to_substract.size() != 0) {
-    cyclus::Composition::Ptr c_special_nucs =
-        cyclus::Composition::CreateFromMass(to_substract);
-    mat_special_nucs =
-        cyclus::Material::CreateUntracked(q_to_switch, c_special_nucs);
-    equiv_mat->ExtractComp(q_to_switch, c_special_nucs);
-
-    cyclus::CompMap to_add;
-    to_add[922380000] = q_to_switch;
-    cyclus::Composition::Ptr c_to_add =
-        cyclus::Composition::CreateFromMass(to_add);
-    equiv_mat->Absorb(cyclus::Material::CreateUntracked(q_to_switch, c_to_add));
-  } else {
-    return std::pair<cyclus::Material::Ptr, cyclus::Material::Ptr>(
-        equiv_mat, mat_special_nucs);
+    std::map<cyclus::Nuc, double>::iterator it2 = ux.find(nuc);
+    if (it2 != ux.end()) {
+      extract_mass_compo.insert(std::pair<cyclus::Nuc, double>(nuc, qty));
+      eq_mass_compo[922380000] += qty;
+      mass_out += qty;
+    } else {
+      if (nuc == 922380000)
+        eq_mass_compo[922380000] += qty;
+      else
+        eq_mass_compo.insert(std::pair<cyclus::Nuc, double>(nuc, qty));
+    }
   }
 
-  if (equiv_mat->quantity() != mat->quantity()) {
-    std::cout << "Oupsy !!" << std::endl;
-  }
-  
+  cyclus::Composition::Ptr equival_compo =
+      cyclus::Composition::CreateFromMass(eq_mass_compo);
+  cyclus::Material::Ptr equiv_mat =
+      cyclus::Material::CreateUntracked(mat->quantity(), equival_compo);
+
+  cyclus::Composition::Ptr extract_compo =
+      cyclus::Composition::CreateFromMass(extract_mass_compo);
+  cyclus::Material::Ptr mat_special_nucs =
+      cyclus::Material::CreateUntracked(mat->quantity(), extract_compo);
+
   // return a pair containing the equivalent material replacing all special
   // nucs but U-238, and the replaced material containing the special nucs.
   return std::pair<cyclus::Material::Ptr, cyclus::Material::Ptr>(
@@ -438,7 +440,7 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
 
   std::pair<Material::Ptr, Material::Ptr> flip_mat =
       equivalent_u8(natu_matl, ux);
-  
+
   cyclus::Material::Ptr equiv_natu_mat = flip_mat.first;
 
   cyclus::toolkit::MatQuery mq(equiv_natu_mat);
@@ -470,71 +472,75 @@ cyclus::Material::Ptr SEnrichment::Enrich_(cyclus::Material::Ptr mat,
   // "enrich" it, but pull out the composition and quantity we require from the
   // blob
   cyclus::Composition::Ptr comp = mat->comp();
-  Material::Ptr response = r->ExtractComp(qty, comp);
+  std::map<cyclus::Nuc, double> compo = comp->mass();
 
-  current_swu_capacity -= swu_req;
+  using cyclus::toolkit::UraniumAssayMass;
 
-  intra_timestep_swu_ += swu_req;
-  intra_timestep_feed_ += feed_req;
-  RecordSEnrichment_(feed_req, swu_req);
+  double prod_assay = UraniumAssayMass(mat);
+  double feed_assay = 0;
 
-  // Re-Add the special nuc inside the product, and fix tails amount accordingly
+  {
+    double pop_qty = inventory.quantity();
+    cyclus::Material::Ptr fission_matl =
+        inventory.Pop(pop_qty, cyclus::eps_rsrc());
+    inventory.Push(fission_matl);
+    feed_assay = cyclus::toolkit::UraniumAssayMass(
+        equivalent_u8(fission_matl, ux).first);
+  }
+  double u5_enrich_factor = prod_assay / feed_assay;
 
-  double prod_mass = response->quantity();
-
-  cyclus::toolkit::MatQuery mq_resp(response);
-  double u5_raw_enrich = mq_resp.mass_frac(922350000);
-  cyclus::toolkit::MatQuery mq_flip(flip_mat.first);
-  double u5_flip_enrich = mq_flip.mass_frac(922350000);
-
-  
+  std::map<cyclus::Nuc, double> feed_compo = r->comp()->mass();
   std::map<cyclus::Nuc, double>::iterator it;
-  for (it = ux.begin(); it != ux.end(); it++) {
-    
-    double nuc_i_enrich_factor =
-        u5_raw_enrich / u5_flip_enrich * it->second;
-
-    cyclus::toolkit::MatQuery mq_(natu_matl);
-    double nuc_i_feed_enrich = mq_.mass(it->first) / natu_matl->quantity();
-    double nuc_i_prod_enrich = nuc_i_feed_enrich * nuc_i_enrich_factor;
-    double nuc_i_prod_mass = nuc_i_prod_enrich * prod_mass;
-
-    // Remove come ux from the material pushed in the tails and add in into the
-    // response, do the otherwise for the U-238 to conserve mass balance.
-    cyclus::CompMap nuc_to_add;
-    nuc_to_add[it->first] = nuc_i_prod_mass;
-    response->Absorb(cyclus::Material::CreateUntracked(
-        nuc_i_prod_mass, cyclus::Composition::CreateFromMass(nuc_to_add)));
-    r->ExtractComp(nuc_i_prod_mass,
-                   cyclus::Composition::CreateFromMass(nuc_to_add));
-
-    cyclus::CompMap u8_to_remove;
-    u8_to_remove[922380000] = nuc_i_prod_mass;
-    r->Absorb(cyclus::Material::CreateUntracked(
-        nuc_i_prod_mass, cyclus::Composition::CreateFromMass(u8_to_remove)));
-    response->ExtractComp(nuc_i_prod_mass,
-                          cyclus::Composition::CreateFromMass(u8_to_remove));
+  for (it = compo.begin(); it != compo.end(); it++) {
+    compo[it->first] = it->second / mat->quantity();
   }
 
-  tails.Push(r);
+  std::map<cyclus::Nuc, double>::iterator it;
+  for (it = ux.begin(); it != ux.end(); it++) {
+    cyclus::Nuc nuc = it->first;
+    double factor = it->second;
+    std::map<cyclus::Nuc, double>::iterator it2 = feed_compo.find(nuc);
+    if (it2 != feed_compo.end()) {
+      compo.insert(std::pair<cyclus::Nuc, double>(
+          nuc, it2->second * factor * u5_enrich_factor));
+      compo[922380000] -= it2->second * factor * u5_enrich_factor;
+      std::cout << nuc << " " << it2->second * factor * u5_enrich_factor
+                << std::endl;
+    }
+  }
 
-  LOG(cyclus::LEV_INFO5, "EnrFac") << prototype()
-                                   << " has performed an enrichment: ";
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Feed Qty: " << feed_req;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Feed Assay: "
-                                   << assays.Feed() * 100;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Product Qty: " << qty;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Product Assay: "
-                                   << assays.Product() * 100;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Tails Qty: "
-                                   << TailsQty(qty, assays);
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Tails Assay: "
-                                   << assays.Tails() * 100;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * SWU: " << swu_req;
-  LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Current SWU capacity: "
-                                   << current_swu_capacity;
+    cyclus::Composition::Ptr corrected_comp =
+        cyclus::Composition::CreateFromMass(compo);
 
-  return response;
+    Material::Ptr response = r->ExtractComp(qty, corrected_comp);
+    tails.Push(r);
+
+    current_swu_capacity -= swu_req;
+
+    intra_timestep_swu_ += swu_req;
+    intra_timestep_feed_ += feed_req;
+    RecordSEnrichment_(feed_req, swu_req);
+
+    // Re-Add the special nuc inside the product, and fix tails amount
+    // accordingly
+
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << prototype() << " has performed an enrichment: ";
+    LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Feed Qty: " << feed_req;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Feed Assay: " << assays.Feed() * 100;
+    LOG(cyclus::LEV_INFO5, "EnrFac") << "   * Product Qty: " << qty;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Product Assay: " << assays.Product() * 100;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Tails Qty: " << TailsQty(qty, assays);
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Tails Assay: " << assays.Tails() * 100;
+    LOG(cyclus::LEV_INFO5, "EnrFac") << "   * SWU: " << swu_req;
+    LOG(cyclus::LEV_INFO5, "EnrFac")
+        << "   * Current SWU capacity: " << current_swu_capacity;
+
+    return response;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
