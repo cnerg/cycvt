@@ -53,17 +53,17 @@ with a Feed F, a target Product (P) enrichement (Pe) and few special nuclide A,B
 
 We also considere the "Enrich" function that enrich a pure U235/U238 feed into enricht uranium (LEU or HEU).
 
-1. build the equivalent F by replacing nucs a and b by U238:
+1. build the equivalent `Feq` by replacing nucs a and b by U238:
 
 `Feq = F - Fa*A - Fb*B + Fa*U238 + Fb*U238` where Fa and Fb are the respective content of nucs A and B in the feed F
 
-2. Enrich the equivalent feed Feq to get the equivalent product Peq and the Feed required quantity:
+2. Enrich the equivalent feed `Feq` to get the equivalent product `Peq` and the Feed required quantity, `Meq`:
 
 `Peq = Enrich(Feq)`
 
 3. Re-add the nucs A and B in the product:
 
-`P = Peq + Fa/|F| * Ea E_U235 * A + Fa/|F| * Eb E_U235 * B - Fa/|F| * Ea E_U235 * U238 + Fa/|F| * Eb E_U235 * U238` where `E_U235 = Peq_U235 / ||Peq|| / Feq_U235 / ||Feq||` (the ratio of U235 assay between Peq and Feq)
+`P = Peq + Fa/|F| * Ea E_U235 * A + Fa/|F| * Eb E_U235 * B - Fa/|F| * Ea E_U235 * U238 + Fa/|F| * Eb E_U235 * U238` where `E_U235 = Peq_U235 / ||Peq|| / Feq_U235 / ||Feq||` (the ratio of U235 assay between `Peq` and `Feq`)
 
  4. Compute the Tails assuming the mass required of feed is the same as the equivalent feed:
 
